@@ -16,7 +16,8 @@ from game import *
 from learningAgents import ReinforcementAgent
 from featureExtractors import *
 
-import random,util,math
+import random,util
+import numpy as np
 
 class QLearningAgent(ReinforcementAgent):
     """
@@ -76,7 +77,7 @@ class QLearningAgent(ReinforcementAgent):
           QValues.append(q_val)
           
         return max(QValues)
-        util.raiseNotDefined()
+  
 
     def computeActionFromQValues(self, state):
         """
@@ -124,10 +125,7 @@ class QLearningAgent(ReinforcementAgent):
           action = self.getPolicy(state)
           
         return action
-        util.raiseNotDefined()
-
-        return action
-
+      
     def update(self, state, action, nextState, reward):
         """
           The parent class calls this to observe a
@@ -174,20 +172,11 @@ class PacmanQAgent(QLearningAgent):
         args['alpha'] = alpha
         args['numTraining'] = numTraining
         self.index = 0  # This is always Pacman
+        self.theta = np.random.rand(5)
         QLearningAgent.__init__(self, **args)
 
-    def getAction(self, state):
-        """
-        Simply calls the getAction method of QLearningAgent and then
-        informs parent of action for Pacman.  Do not change or remove this
-        method. 
-        """
-        action = QLearningAgent.getAction(self,state)
-        self.doAction(state,action)
-        return action
 
-
-class ApproximateQAgent(PacmanQAgent):
+class ReinforceAgent(PacmanQAgent):
     """
        ApproximateQLearningAgent
 
@@ -199,7 +188,32 @@ class ApproximateQAgent(PacmanQAgent):
         self.featExtractor = util.lookup(extractor, globals())()
         PacmanQAgent.__init__(self, **args)
         self.weights = util.Counter()
+        self.transition_history = []
+        self.actions = ['North','South' ,'East','West','Stop']
+        self.gamma = 0.99
+      
+    def softmax(self, x):
+        exp = np.exp(x)
+        y = exp / np.sum(exp)
+        return y
+      
+    def log_derivative(self, theta, state, action):
+        features = self.featExtractor.getFeatures(state, action)
+        x = [features["closest-food"] + features["#-of-ghosts-1-step-away"]]
+        x = x * theta
+        return x - x*self.softmax(x)
 
+    def actionProbs(self, theta, state):
+        #x = (state.getPacmanPosition(), tuple(state.getGhostPositions()), state.getScore(), state.getNumFood(), state.getNumAgents(), tuple(state.getCapsules()) )
+        i = 0
+        x = []
+        for i, action in enumerate(self.actions):
+          features = self.featExtractor.getFeatures(state, action)
+          x.append(features["closest-food"] + features["#-of-ghosts-1-step-away"])
+          x[i] = x[i] * theta[i]
+
+        return self.softmax(x)
+        
     def getWeights(self):
         return self.weights
 
@@ -212,36 +226,46 @@ class ApproximateQAgent(PacmanQAgent):
         q_value = 0
         features = self.featExtractor.getFeatures(state, action)
         keys = features.keys()
-        counter = 0
         weights = self.getWeights()
         for key in keys:
             q_value += features[key] * weights[key]
-            counter += 1
         return q_value
 
+    def getAction(self, state):
+        """
+        Simply calls the getAction method of QLearningAgent and then
+        informs parent of action for Pacman.  Do not change or remove this
+        method. 
+        """
+        #action = QLearningAgent.getAction(self,state)
+        legalActions = self.getLegalActions(state)
+        probs = self.actionProbs(self.theta, state)
+        #print(probs)
+        action = np.random.choice(self.actions, p=probs)
+        if action not in legalActions:
+          action = np.random.choice(legalActions)
+        #print(action)
+        action = QLearningAgent.getAction(self,state)
+        self.doAction(state,action)
+        return action
+      
     def update(self, state, action, nextState, reward):
-        """
-           Should update your weights based on transition
-        """
-        "*** YOUR CODE HERE ***"
-        features = self.featExtractor.getFeatures(state, action)
-        weights = self.getWeights()
-        
-        difference = 0
-        if len(self.getLegalActions(nextState)) == 0:
-            difference = reward - self.getQValue(state, action)
-        else:
-            difference = (reward + self.discount * max([self.getQValue(nextState, nextAction) for nextAction in self.getLegalActions(nextState)])) - self.getQValue(state, action)
-        
-        keys = weights.keys()
-        for key in keys:
-          self.weights[key] = self.weights[key] + self.alpha * difference * features[key]
+        self.transition_history.append([state, action, reward])
 
         
     def final(self, state):
         "Called at the end of each game."
         # call the super-class final method
         PacmanQAgent.final(self, state)
+        print("ep")
+        G = 0
+        
+        for t in reversed(range(0, len(self.transition_history))):
+          G = G * self.gamma + self.transition_history[t][2]
+          log_prob = self.log_derivative(self.theta, self.transition_history[t][0], self.transition_history[t][1])
+          self.theta += self.alpha * np.power(self.gamma, t) * log_prob * G
+           
+        self.transition_history = [] 
 
         # did we finish training?
         if self.episodesSoFar == self.numTraining:
