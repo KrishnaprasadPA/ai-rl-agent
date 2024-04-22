@@ -245,7 +245,6 @@ class ReinforceAgent(PacmanQAgent):
         if action not in legalActions:
           action = np.random.choice(legalActions)
         #print(action)
-        action = QLearningAgent.getAction(self,state)
         self.doAction(state,action)
         return action
       
