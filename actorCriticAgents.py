@@ -9,14 +9,14 @@ import math
 
 
 class ActorCriticAgent(ReinforcementAgent):
-    def __init__(self, epsilon=0.05, gamma=0.75, alpha=0.01, critic_alpha=0.01, extractor='SimpleExtractor', **args):
+    def __init__(self, epsilon=0.001, gamma=0.75, alpha=0.01, critic_alpha=0.01, extractor='SimpleExtractor', **args):
         ReinforcementAgent.__init__(self, **args)
         self.featExtractor = util.lookup(extractor, globals())()
         self.gamma = gamma
         self.critic_alpha = critic_alpha
         self.actor_theta = collections.defaultdict(lambda: 0)
         self.critic_theta = collections.defaultdict(lambda: 0)
-        self.transition_history = []
+        self.transition_history = []  # No need for transition history now
         self.actions = ['North', 'West', 'South', 'East']
 
     def getQValue(self, state, action):
@@ -27,7 +27,6 @@ class ActorCriticAgent(ReinforcementAgent):
         return value
 
     def getVValue(self, state, action):
-        # Compute value of state-action pair using critic's parameters
         features = self.featExtractor.getFeatures(state, action)
         value = 0
         for key in features.keys():
@@ -48,18 +47,13 @@ class ActorCriticAgent(ReinforcementAgent):
             probs[action] /= sum_exp  # Normalize by the sum of exponentials
         return probs
 
-
     def updateCritic(self, state, action, reward, nextState):
-        # Update critic's parameters using TD-error
         difference = reward + self.gamma * self.getVValue(nextState, action) - self.getVValue(state, action)
         features = self.featExtractor.getFeatures(state, action)
         for key in features.keys():
             self.critic_theta[key] += self.critic_alpha * difference * features[key]
 
-
-
     def updateActor(self, state, action, reward, nextState):
-        # Update actor's parameters using advantage (TD-error)
         difference = reward + self.gamma * self.getVValue(nextState, action) - self.getVValue(state, action)
         features = self.featExtractor.getFeatures(state, action)
         for key in features.keys():
@@ -69,7 +63,8 @@ class ActorCriticAgent(ReinforcementAgent):
         """
         This function is called after observing a transition and reward.
         """
-        self.transition_history.append((state, action, reward, nextState))
+        self.updateCritic(state, action, reward, nextState)
+        self.updateActor(state, action, reward, nextState)
 
     def getAction(self, state):
         legalActions = self.getLegalActions(state)
@@ -94,12 +89,6 @@ class ActorCriticAgent(ReinforcementAgent):
         return action
 
     def final(self, state):
-        G = 0
-        for t, (state, action, reward, nextState) in enumerate(reversed(self.transition_history)):
-            G = G * self.gamma + reward
-            self.updateCritic(state, action, reward, nextState)
-            self.updateActor(state, action, G, nextState)
-        self.transition_history = []
         ReinforcementAgent.final(self, state)
 
         
