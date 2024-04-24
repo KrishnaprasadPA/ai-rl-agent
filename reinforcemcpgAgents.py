@@ -37,7 +37,8 @@ class ReinforceMCPGAgent(ReinforcementAgent):
             probs[action] = value
             sum += value
         for action in legalActions:
-            probs[action] /= sum
+            if sum != 0:
+                probs[action] /= sum
         return probs
     
     def getPolicy(self, state):
@@ -75,14 +76,6 @@ class ReinforceMCPGAgent(ReinforcementAgent):
         for t in range(len(returns)):
             returns[t] = returns[t] * (self.gamma ** t)
         return returns
-    
-    def updatePolicy(self):
-        returns = self.computeGvalues()
-        for t in range(len(self.actions)):
-            state = self.states[t]
-            action = self.actions[t]
-            G_t = returns[t]
-            self.updatePolicyParameters(state, action, G_t)
 
     def log_gradient(self, state, action):
         action_probs = self.actionProbs(state)
