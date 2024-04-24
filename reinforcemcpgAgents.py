@@ -84,25 +84,6 @@ class ReinforceMCPGAgent(ReinforcementAgent):
             G_t = returns[t]
             self.updatePolicyParameters(state, action, G_t)
 
-    """
-    def log_gradient(self, state, action):
-        probs = self.actionProbs(state)
-        features = self.featExtractor.getFeatures(state, action)
-        weighted_features_sum = {}
-        legalActions = self.getLegalActions(state)
-        for a in legalActions:
-            features_a = self.featExtractor.getFeatures(state, a)
-            for feature, value in features_a.items():
-                if feature not in weighted_features_sum:
-                    weighted_features_sum[feature] = 0
-                weighted_features_sum[feature] += probs[a] * value
-
-        grad_log_policy = {}
-        for feature, value in features.items():
-            grad_log_policy[feature] = value - weighted_features_sum.get(feature, 0)
-
-        return grad_log_policy
-    """
     def log_gradient(self, state, action):
         action_probs = self.actionProbs(state)
         features = self.featExtractor.getFeatures(state, action)
