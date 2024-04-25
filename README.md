@@ -5,7 +5,7 @@ Reinforcement Learning Agent Team Project for Artificial Intelligence
 2. Actor Critic for control with linear function approximation
    Run using: python pacman.py -p ActorCriticAgent -q -a extractor=CustomExtractor,alpha=0.3,epsilon=0.05 -x 200 -n 210 -l mediumClassic
 3. QLearning for control with linear function approximation
-   Run using: python pacman.py -p ApproximateQAgent -q -a extractor=CustomExtractor,alpha=0.3,epsilon=0.05 -x 200 -n 210 -l mediumClassic
+   Run using: python pacman.py -p ApproximateQAgent -q -a extractor=SimpleExtractor,alpha=0.3,epsilon=0.05 -x 200 -n 210 -l mediumClassic
 
 To run plots:
 
