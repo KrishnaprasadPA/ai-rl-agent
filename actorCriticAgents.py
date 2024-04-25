@@ -9,15 +9,19 @@ import math
 
 
 class ActorCriticAgent(ReinforcementAgent):
-    def __init__(self, epsilon=0.001, gamma=0.75, alpha=0.01, critic_alpha=0.01, extractor='SimpleExtractor', **args):
-        ReinforcementAgent.__init__(self, **args)
+    def __init__(self, epsilon=0.001, gamma=0.75, alpha=0.01, extractor='SimpleExtractor', **args):
         self.featExtractor = util.lookup(extractor, globals())()
         self.gamma = gamma
-        self.critic_alpha = critic_alpha
+        self.critic_alpha = alpha
         self.actor_theta = collections.defaultdict(lambda: 0)
         self.critic_theta = collections.defaultdict(lambda: 0)
         self.transition_history = []  # No need for transition history now
         self.actions = ['North', 'West', 'South', 'East']
+        args['epsilon'] = epsilon
+        args['gamma'] = gamma
+        args['alpha'] = alpha
+        ReinforcementAgent.__init__(self, **args)
+        self.critic_alpha = self.alpha
 
     def getQValue(self, state, action):
         features = self.featExtractor.getFeatures(state, action)
@@ -89,7 +93,9 @@ class ActorCriticAgent(ReinforcementAgent):
         return action
 
     def final(self, state):
+        print("ep", self.episodesSoFar)
         ReinforcementAgent.final(self, state)
+        print(state.getScore())
 
         
 

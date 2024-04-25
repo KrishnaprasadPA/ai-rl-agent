@@ -9,7 +9,6 @@ import math
 
 class ReinforceMCPGAgent(ReinforcementAgent):
     def __init__(self, epsilon=0.05, gamma=0.85, alpha=0.1, extractor='SimpleExtractor', **args):
-        ReinforcementAgent.__init__(self, **args)
         self.featExtractor = util.lookup(extractor, globals())()
         args['epsilon'] = epsilon
         args['gamma'] = gamma
@@ -19,6 +18,7 @@ class ReinforceMCPGAgent(ReinforcementAgent):
         self.theta = collections.defaultdict(lambda : 0)
         self.transition_history = []
         self.actions = ['North','South' ,'East','West','Stop']
+        ReinforcementAgent.__init__(self, **args)
 
     
     def getQValue(self, state, action):
@@ -114,12 +114,12 @@ class ReinforceMCPGAgent(ReinforcementAgent):
             self.theta[feature] += self.alpha * G * log_grad * np.power(self.gamma, t)
         
         self.transition_history = [] 
-        
         ReinforcementAgent.final(self, state)
-        
+        print(state.getScore())
 
         # did we finish training?
         if self.episodesSoFar == self.numTraining:
             # you might want to print your weights here for debugging
             "*** YOUR CODE HERE ***"
+            #print(self.alpha, self.gamma, self.epsilon)
             pass

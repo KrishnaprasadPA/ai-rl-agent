@@ -52,6 +52,7 @@ import types
 import time
 import random
 import os
+import numpy as np
 
 ###################################################
 # YOUR INTERFACE TO THE PACMAN WORLD: A GameState #
@@ -700,6 +701,7 @@ def runGames(layout, pacman, ghosts, display, numGames, record, numTraining=0, c
         wins = [game.state.isWin() for game in games]
         winRate = wins.count(True) / float(len(wins))
         print('Average Score:', sum(scores) / float(len(scores)))
+        print('Standard Deviation:', np.std(scores))
         print('Scores:       ', ', '.join([str(score) for score in scores]))
         print('Win Rate:      %d/%d (%.2f)' %
               (wins.count(True), len(wins), winRate))
